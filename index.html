@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChecklistHub - Professional Checklist Management</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- Login Page -->
+  <div id="loginPage" class="login-page">
+    <div class="login-container">
+      <div class="login-logo">
+        <div class="login-icon">✓</div>
+        <h1>EHS Checklist Pro</h1>
+        <p>Professional Checklist Management System</p>
+      </div>
+      <div class="login-card">
+        <h2>Sign In</h2>
+        <p class="login-subtitle">Access your professional checklist system</p>
+        <div class="form-block" style="border: none; padding: 0; box-shadow: none;">
+          <label>Email Address</label>
+          <input type="email" id="loginEmail" placeholder="Enter your email">
+          <label>Password</label>
+          <input type="password" id="loginPassword" placeholder="Enter your password">
+          <button class="btn btn-primary" id="btnLogin" style="width: 100%; margin-top: 10px;">
+            <span class="btn-text">Sign In</span>
+            <span class="btn-loading" hidden>Signing in...</span>
+          </button>
+          <p id="loginError" class="login-error" hidden>Invalid email or password</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div id="mainApp" class="app" hidden>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">✓</div>
+        <div class="brand-text">
+          <h1>EHS Checklist Pro</h1>
+          <p>Templates & Records</p>
+        </div>
+      </div>
+      <nav class="nav">
+        <button class="nav-btn active" data-view="dashboard">📊 Dashboard</button>
+        <button class="nav-btn" data-view="templates">📋 Templates</button>
+        <button class="nav-btn" data-view="builder">🛠️ New Template</button>
+        <button class="nav-btn" data-view="records">🗂️ Records</button>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="theme-toggle" id="themeToggle">🌙 Dark Mode</button>
+        <button class="btn btn-secondary btn-small" id="btnLogout" style="margin-top: 10px;">🚪 Logout</button>
+        <p>Data stored locally in your browser</p>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="content">
+
+    <!-- VIEW: Dashboard -->
+    <section id="view-dashboard" class="view active">
+      <header class="view-header">
+        <div>
+          <h2>Dashboard</h2>
+          <p class="subtitle">Overview of your checklists and progress</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary" id="btnImport">📥 Import</button>
+          <button class="btn btn-primary" id="btnExportAll">📤 Export All</button>
+        </div>
+      </header>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="statTemplates">0</div>
+          <div class="stat-label">Templates</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statRecords">0</div>
+          <div class="stat-label">Completed Records</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statItems">0</div>
+          <div class="stat-label">Total Items</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statRecent">0</div>
+          <div class="stat-label">This Week</div>
+        </div>
+      </div>
+
+      <header class="view-header" style="margin-top: 40px;">
+        <div>
+          <h2>Recent Activity</h2>
+          <p class="subtitle">Your latest records</p>
+        </div>
+      </header>
+      <div id="recentRecordsGrid" class="card-grid"></div>
+    </section>
+
+    <!-- VIEW: Templates List -->
+    <section id="view-templates" class="view">
+      <header class="view-header">
+        <div>
+          <h2>Checklist Templates</h2>
+          <p class="subtitle">Choose a template to fill out or manage</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary" id="btnImportTemplates">📥 Import</button>
+          <button class="btn btn-primary" id="btnNewTemplate">➕ New Template</button>
+        </div>
+      </header>
+
+      <div class="search-filter-row">
+        <input type="text" id="templateSearch" placeholder="Search templates...">
+        <select id="categoryFilter">
+          <option value="">All Categories</option>
+        </select>
+      </div>
+
+      <div id="templatesGrid" class="card-grid"></div>
+      <div id="templatesEmpty" class="empty-state" hidden>
+        <p>No templates yet. Create your first checklist template to get started!</p>
+        <button class="btn btn-primary" id="btnEmptyNewTemplate">➕ Create Template</button>
+      </div>
+    </section>
+
+    <!-- VIEW: Template Builder -->
+    <section id="view-builder" class="view">
+      <header class="view-header">
+        <div>
+          <h2 id="builderTitle">New Checklist Template</h2>
+          <p class="subtitle">Define your checklist structure and items</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary" id="btnCancelBuilder">← Cancel</button>
+          <button class="btn btn-primary" id="btnSaveTemplate">💾 Save Template</button>
+        </div>
+      </header>
+
+      <div class="form-block">
+        <div class="form-row">
+          <div>
+            <label>Template Name</label>
+            <input type="text" id="tplName" placeholder="e.g., Daily Equipment Inspection">
+          </div>
+          <div>
+            <label>Category</label>
+            <input type="text" id="tplCategory" placeholder="e.g., Safety, Maintenance">
+          </div>
+          <div>
+            <label>Priority</label>
+            <select id="tplPriority">
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
+        <label>Description (Optional)</label>
+        <textarea id="tplDescription" rows="2" placeholder="Briefly describe what this checklist is for..."></textarea>
+        <label>Custom PDF Header (Optional)</label>
+        <textarea id="tplCustomHeader" rows="2" placeholder="Custom header text for PDF export..."></textarea>
+        <label>Custom PDF Footer (Optional)</label>
+        <textarea id="tplCustomFooter" rows="2" placeholder="Custom footer text for PDF export..."></textarea>
+      </div>
+
+      <div class="items-block">
+        <div class="items-header">
+          <h3>Checklist Items</h3>
+          <button class="btn btn-small btn-primary" id="btnAddItem">➕ Add Item</button>
+        </div>
+        <div id="itemsList" class="items-list"></div>
+        <div id="itemsEmpty" class="empty-state-small" hidden>
+          <p>No items yet. Click "Add Item" to start building your checklist!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: Fill Checklist -->
+    <section id="view-fill" class="view">
+      <header class="view-header">
+        <div>
+          <h2 id="fillTitle">Complete Checklist</h2>
+          <p class="subtitle" id="fillSubtitle"></p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary" id="btnCancelFill">← Back</button>
+          <button class="btn btn-primary" id="btnSubmitFill">✅ Save Response</button>
+        </div>
+      </header>
+
+      <div class="form-block">
+        <div class="form-row">
+          <div>
+            <label>Response Title</label>
+            <input type="text" id="fillResponseTitle" placeholder="e.g., Equipment Check - June 30">
+          </div>
+          <div>
+            <label>Completed By</label>
+            <input type="text" id="fillCompletedBy" placeholder="Your name">
+          </div>
+          <div>
+            <label>Due Date (Optional)</label>
+            <input type="date" id="fillDueDate">
+          </div>
+        </div>
+        <label>Notes (Optional)</label>
+        <textarea id="fillNotes" rows="2" placeholder="Additional notes for this checklist run..."></textarea>
+      </div>
+
+      <div class="progress-text" id="progressText">0% Complete (0/0)</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+      </div>
+
+      <div id="fillItemsList" class="fill-items-list"></div>
+    </section>
+
+    <!-- VIEW: Records -->
+    <section id="view-records" class="view">
+      <header class="view-header">
+        <div>
+          <h2>Completed Records</h2>
+          <p class="subtitle">View, review, or export your completed checklists</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary" id="btnExportAllRecords">📤 Export All</button>
+        </div>
+      </header>
+
+      <div class="search-filter-row">
+        <input type="text" id="recordSearch" placeholder="Search records...">
+        <select id="recordSort">
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="title">By Title</option>
+        </select>
+      </div>
+
+      <div id="recordsGrid" class="card-grid"></div>
+      <div id="recordsEmpty" class="empty-state" hidden>
+        <p>No completed checklists yet. Fill out a template to create your first record!</p>
+      </div>
+    </section>
+
+    <!-- VIEW: Record Detail -->
+    <section id="view-record-detail" class="view">
+      <header class="view-header">
+        <div>
+          <h2 id="detailTitle">Checklist Record</h2>
+          <p class="subtitle" id="detailSubtitle"></p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary" id="btnBackRecords">← Back</button>
+          <button class="btn btn-secondary" id="btnSendPdf">📧 Send PDF</button>
+          <button class="btn btn-primary" id="btnExportPdf">📄 Export PDF</button>
+        </div>
+      </header>
+
+      <div id="detailMeta" class="detail-meta"></div>
+      <div id="detailItemsList" class="fill-items-list readonly"></div>
+    </section>
+
+  </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- Import Modal -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <h3>Import Data</h3>
+    <p>Select a JSON file to import templates or records</p>
+    <div class="form-block" style="padding: 0; border: none; box-shadow: none;">
+      <input type="file" id="importFile" accept=".json" style="width: 100%; margin-bottom: 20px;">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="btnCancelImport">Cancel</button>
+      <button class="btn btn-primary" id="btnConfirmImport">Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+      <div class="modal">
+        <h3>Confirm Delete</h3>
+        <p id="deleteMessage">Are you sure you want to delete this?</p>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="btnCancelDelete">Cancel</button>
+          <button class="btn btn-danger" id="btnConfirmDelete">Delete</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Send PDF Modal -->
+    <div class="modal-overlay" id="sendPdfModal">
+      <div class="modal">
+        <h3>Send PDF</h3>
+        <p>Select how you want to send the checklist:</p>
+        <div class="send-options">
+          <button class="btn btn-option" data-method="outlook">📧 Outlook</button>
+          <button class="btn btn-option" data-method="mail">📧 Mail</button>
+          <button class="btn btn-option" data-method="gmail">📧 Gmail</button>
+          <button class="btn btn-option" data-method="teams">💬 Teams</button>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="btnCancelSend">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+<script src="js/storage.js"></script>
+<script src="js/pdfExport.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
