@@ -1,4 +1,4 @@
-/* pdfExport.js — builds a formal audit checklist PDF exactly matching Template.pdf format */
+  /* pdfExport.js — builds a formal audit checklist PDF exactly matching Template.pdf and template.xlsx format */
 
 const PdfExport = (() => {
 
@@ -12,15 +12,19 @@ const PdfExport = (() => {
     });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const marginLeft = 30;
-    const marginRight = 30;
-    const marginTop = 25;
-    const marginBottom = 25;
+    
+    // Margins from Excel page setup:
+    // Left = 0.7" = 50.4pt, Right = 0.7" = 50.4pt
+    // Top = 0.5" = 36pt, Bottom = 0.5" = 36pt
+    const marginLeft = 50;
+    const marginRight = 50;
+    const marginTop = 36;
+    const marginBottom = 36;
     const contentWidth = pageWidth - marginLeft - marginRight;
     
     let y = marginTop;
 
-    // Set default font
+    // Set default font (Helvetica = Arial equivalent in jsPDF)
     doc.setFont("helvetica");
 
     // Header - Main Title
