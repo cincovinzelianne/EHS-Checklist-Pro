@@ -21,6 +21,9 @@ const Storage = (() => {
   function _write(key, data) {
     try {
       localStorage.setItem(key, JSON.stringify(data));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("checklisthub:data-changed", { detail: { key } }));
+      }
       return true;
     } catch (e) {
       console.error("Storage write error", e);

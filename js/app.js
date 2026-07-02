@@ -9,6 +9,7 @@ const App = (() => {
   let pendingDelete = null;
   let importData = null;
   let pendingSendRecordId = null;
+  let currentViewId = "view-dashboard";
 
   // ---------- Authentication ----------
   const VALID_CREDENTIALS = {
@@ -63,6 +64,7 @@ const App = (() => {
   }
 
   function showView(viewId) {
+    currentViewId = viewId;
     document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
     const targetView = document.getElementById(viewId);
     if (targetView) targetView.classList.add("active");
@@ -83,6 +85,21 @@ const App = (() => {
     if (viewId === "view-dashboard") renderDashboard();
     else if (viewId === "view-templates") { renderTemplates(); updateCategoryFilter(); }
     else if (viewId === "view-records") renderRecords();
+  }
+
+  function refreshActiveView() {
+    if (!document.getElementById("mainApp") || document.getElementById("mainApp").hidden) return;
+
+    if (currentViewId === "view-dashboard") {
+      renderDashboard();
+    } else if (currentViewId === "view-templates") {
+      renderTemplates(document.getElementById("templateSearch").value, document.getElementById("categoryFilter").value);
+      updateCategoryFilter();
+    } else if (currentViewId === "view-records") {
+      renderRecords(document.getElementById("recordSearch").value, document.getElementById("recordSort").value);
+    } else if (currentViewId === "view-record-detail" && currentDetailRecordId) {
+      openRecordDetail(currentDetailRecordId);
+    }
   }
 
   function escapeHtml(str) {
@@ -900,6 +917,15 @@ const App = (() => {
     });
   }
 
+  function bindRealtimeEvents() {
+    window.addEventListener("checklisthub:data-changed", refreshActiveView);
+    window.addEventListener("storage", (e) => {
+      if (e.key === "checklist_templates_v1" || e.key === "checklist_records_v1") {
+        refreshActiveView();
+      }
+    });
+  }
+
   // ---------- Navigation & Search ----------
   function bindNav() {
     document.querySelectorAll(".nav-btn").forEach(btn => {
@@ -956,10 +982,12 @@ const App = (() => {
     bindDetailEvents();
     bindSendPdfEvents();
     bindImportExportEvents();
+    bindRealtimeEvents();
     
     // Check authentication
     if (checkAuth()) {
       showMainApp();
+      currentViewId = "view-dashboard";
       renderDashboard();
       seedExampleIfEmpty();
     } else {
