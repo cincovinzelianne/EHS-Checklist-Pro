@@ -197,22 +197,58 @@
       </header>
 
       <div class="form-block">
-        <div class="form-row">
-          <div>
-            <label>Response Title</label>
-            <input type="text" id="fillResponseTitle" placeholder="e.g., Equipment Check - June 30">
+        <div class="form-row" style="gap:10px; margin-bottom: 12px;">
+          <div style="flex:1;">
+            <label>New Product Process</label>
+            <input type="checkbox" id="fillNewProductProcess" style="width:auto;">
           </div>
-          <div>
-            <label>Completed By</label>
-            <input type="text" id="fillCompletedBy" placeholder="Your name">
-          </div>
-          <div>
-            <label>Due Date (Optional)</label>
-            <input type="date" id="fillDueDate">
+          <div style="flex:1;">
+            <label>Product Process Change</label>
+            <input type="checkbox" id="fillProductProcessChange" style="width:auto;">
           </div>
         </div>
-        <label>Notes (Optional)</label>
-        <textarea id="fillNotes" rows="2" placeholder="Additional notes for this checklist run..."></textarea>
+        <div class="form-row" style="gap:10px; margin-bottom:12px;">
+          <div style="flex:1;">
+            <label>New Equipment/Future</label>
+            <input type="checkbox" id="fillNewEquipmentFuture" style="width:auto;">
+          </div>
+          <div style="flex:1;">
+            <label>Equipment Modification</label>
+            <input type="checkbox" id="fillEquipmentModification" style="width:auto;">
+          </div>
+        </div>
+        <div class="form-row">
+          <div style="flex:1;">
+            <label>Equipment/Line No.</label>
+            <input type="text" id="fillEquipmentLineNo" placeholder="Enter equipment/line no.">
+          </div>
+          <div style="flex:1;">
+            <label>Equipment OEM Contact</label>
+            <input type="text" id="fillEquipmentOemContact" placeholder="Enter contact">
+          </div>
+        </div>
+        <div class="form-row">
+          <div style="flex:1;">
+            <label>Product/Process Name</label>
+            <input type="text" id="fillProductProcessName" placeholder="Enter name">
+          </div>
+          <div style="flex:1;">
+            <label>Inspection Location</label>
+            <input type="text" id="fillInspectionLocation" placeholder="Enter location">
+          </div>
+        </div>
+        <div class="form-row">
+          <div style="flex:1;">
+            <label>Inspection Date</label>
+            <input type="date" id="fillInspectionDate">
+          </div>
+          <div style="flex:1;">
+            <label>Inspection Conducted By</label>
+            <input type="text" id="fillInspectionConductedBy" placeholder="Your name">
+          </div>
+        </div>
+        <label>Overall Remarks</label>
+        <textarea id="fillOverallRemarks" rows="3" placeholder="Enter overall remarks..."></textarea>
       </div>
 
       <div class="progress-text" id="progressText">0% Complete (0/0)</div>

@@ -392,16 +392,23 @@ const App = (() => {
     currentFillAnswers = {};
     t.items.forEach(item => {
       currentFillAnswers[item.id] = item.type === "yesno"
-        ? { type: "yesno", itemId: item.id, value: null }
-        : { type: "text", itemId: item.id, value: "" };
+        ? { type: "yesno", itemId: item.id, value: null, remarks: "" }
+        : { type: "text", itemId: item.id, value: "", remarks: "" };
     });
 
     document.getElementById("fillTitle").textContent = t.name;
     document.getElementById("fillSubtitle").textContent = t.description || "";
-    document.getElementById("fillResponseTitle").value = `${t.name} - ${formatShortDate(Date.now())}`;
-    document.getElementById("fillCompletedBy").value = "";
-    document.getElementById("fillNotes").value = "";
-    document.getElementById("fillDueDate").value = "";
+    document.getElementById("fillProductProcessName").value = `${t.name} - ${formatShortDate(Date.now())}`;
+    document.getElementById("fillNewProductProcess").checked = false;
+    document.getElementById("fillNewEquipmentFuture").checked = false;
+    document.getElementById("fillProductProcessChange").checked = false;
+    document.getElementById("fillEquipmentModification").checked = false;
+    document.getElementById("fillEquipmentLineNo").value = "";
+    document.getElementById("fillEquipmentOemContact").value = "";
+    document.getElementById("fillInspectionLocation").value = "";
+    document.getElementById("fillInspectionDate").value = new Date().toISOString().split("T")[0];
+    document.getElementById("fillInspectionConductedBy").value = "";
+    document.getElementById("fillOverallRemarks").value = "";
 
     renderFillItems(t);
     updateProgress();
@@ -415,10 +422,14 @@ const App = (() => {
         return `
           <div class="fill-item" data-item-id="${item.id}">
             <div class="fill-item-text">${escapeHtml(item.text)}</div>
-            <div class="fill-item-answer">
+            <div class="fill-item-answer" style="display:flex; gap:20px; align-items:flex-end;">
               <div class="toggle-group">
                 <button type="button" class="toggle-btn yes" data-value="yes">Yes</button>
                 <button type="button" class="toggle-btn no" data-value="no">No</button>
+              </div>
+              <div style="flex:1;">
+                <label style="font-size:12px; color: #64748b;">Remarks</label>
+                <textarea class="fill-item-remarks" rows="1" placeholder="Enter remarks..."></textarea>
               </div>
             </div>
           </div>
@@ -427,7 +438,9 @@ const App = (() => {
         return `
           <div class="fill-item" data-item-id="${item.id}">
             <div class="fill-item-text">${escapeHtml(item.text)}</div>
-            <textarea rows="2" placeholder="Type your response..."></textarea>
+            <div style="flex:1;">
+              <textarea rows="2" placeholder="Type your response..."></textarea>
+            </div>
           </div>
         `;
       }
@@ -463,22 +476,35 @@ const App = (() => {
       if (!textarea) return;
       const wrap = textarea.closest(".fill-item");
       const itemId = wrap.dataset.itemId;
-      currentFillAnswers[itemId].value = textarea.value;
+
+      if (textarea.classList.contains("fill-item-remarks")) {
+        currentFillAnswers[itemId].remarks = textarea.value;
+      } else {
+        currentFillAnswers[itemId].value = textarea.value;
+      }
       updateProgress();
     });
 
     document.getElementById("btnCancelFill").addEventListener("click", () => showView("view-templates"));
 
     document.getElementById("btnSubmitFill").addEventListener("click", () => {
-      const title = document.getElementById("fillResponseTitle").value.trim();
-      if (!title) { showToast("Please enter a response title!"); return; }
+      const productProcessName = document.getElementById("fillProductProcessName").value.trim();
+      if (!productProcessName) { showToast("Please enter Product/Process Name!"); return; }
 
       const record = {
         templateId: currentFillTemplateId,
-        title,
-        completedBy: document.getElementById("fillCompletedBy").value.trim(),
-        notes: document.getElementById("fillNotes").value.trim(),
-        dueDate: document.getElementById("fillDueDate").value,
+        title: productProcessName,
+        newProductProcess: document.getElementById("fillNewProductProcess").checked,
+        newEquipmentFuture: document.getElementById("fillNewEquipmentFuture").checked,
+        productProcessChange: document.getElementById("fillProductProcessChange").checked,
+        equipmentModification: document.getElementById("fillEquipmentModification").checked,
+        equipmentLineNo: document.getElementById("fillEquipmentLineNo").value.trim(),
+        equipmentOemContact: document.getElementById("fillEquipmentOemContact").value.trim(),
+        productProcessName: productProcessName,
+        inspectionLocation: document.getElementById("fillInspectionLocation").value.trim(),
+        inspectionDate: document.getElementById("fillInspectionDate").value,
+        inspectionConductedBy: document.getElementById("fillInspectionConductedBy").value.trim(),
+        overallRemarks: document.getElementById("fillOverallRemarks").value.trim(),
         answers: Object.values(currentFillAnswers)
       };
       Storage.saveRecord(record);
