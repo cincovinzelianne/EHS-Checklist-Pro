@@ -148,11 +148,11 @@
         <div class="form-row">
           <div>
             <label>Template Name</label>
-            <input type="text" id="tplName" placeholder="e.g., Daily Equipment Inspection">
+            <input type="text" id="tplName" maxlength="60" placeholder="e.g., Daily Equipment Inspection">
           </div>
           <div>
             <label>Category</label>
-            <input type="text" id="tplCategory" placeholder="e.g., Safety, Maintenance">
+            <input type="text" id="tplCategory" maxlength="40" placeholder="e.g., Safety, Maintenance">
           </div>
           <div>
             <label>Priority</label>
@@ -164,17 +164,20 @@
           </div>
         </div>
         <label>Description (Optional)</label>
-        <textarea id="tplDescription" rows="2" placeholder="Briefly describe what this checklist is for..."></textarea>
+        <textarea id="tplDescription" rows="2" maxlength="120" placeholder="Briefly describe what this checklist is for..."></textarea>
         <label>Custom PDF Header (Optional)</label>
-        <textarea id="tplCustomHeader" rows="2" placeholder="Custom header text for PDF export..."></textarea>
+        <textarea id="tplCustomHeader" rows="2" maxlength="120" placeholder="Custom header text for PDF export..."></textarea>
         <label>Custom PDF Footer (Optional)</label>
-        <textarea id="tplCustomFooter" rows="2" placeholder="Custom footer text for PDF export..."></textarea>
+        <textarea id="tplCustomFooter" rows="2" maxlength="120" placeholder="Custom footer text for PDF export..."></textarea>
       </div>
 
       <div class="items-block">
         <div class="items-header">
           <h3>Checklist Items</h3>
-          <button class="btn btn-small btn-primary" id="btnAddItem">➕ Add Item</button>
+          <div class="header-actions">
+            <button class="btn btn-small btn-secondary" id="btnAddSection">➕ Add Section</button>
+            <button class="btn btn-small btn-primary" id="btnAddItem">➕ Add Item</button>
+          </div>
         </div>
         <div id="itemsList" class="items-list"></div>
         <div id="itemsEmpty" class="empty-state-small" hidden>
@@ -197,6 +200,10 @@
       </header>
 
       <div class="form-block">
+        <div class="fill-note">
+          <strong>Note:</strong> Fill in the boxes below. These are the editable fields: new product process, product process change, new equipment/future, equipment modification, equipment/line no., OEM contact, product/process name, inspection location, inspection date, inspection conducted by, and overall remarks.
+        </div>
+        <div class="fill-section-label">Editable Information</div>
         <div class="form-row" style="gap:10px; margin-bottom: 12px;">
           <div style="flex:1;">
             <label>New Product Process</label>
@@ -220,21 +227,21 @@
         <div class="form-row">
           <div style="flex:1;">
             <label>Equipment/Line No.</label>
-            <input type="text" id="fillEquipmentLineNo" placeholder="Enter equipment/line no.">
+            <input type="text" id="fillEquipmentLineNo" maxlength="40" placeholder="Enter equipment/line no.">
           </div>
           <div style="flex:1;">
             <label>Equipment OEM Contact</label>
-            <input type="text" id="fillEquipmentOemContact" placeholder="Enter contact">
+            <input type="text" id="fillEquipmentOemContact" maxlength="40" placeholder="Enter contact">
           </div>
         </div>
         <div class="form-row">
           <div style="flex:1;">
             <label>Product/Process Name</label>
-            <input type="text" id="fillProductProcessName" placeholder="Enter name">
+            <input type="text" id="fillProductProcessName" maxlength="80" placeholder="Enter name">
           </div>
           <div style="flex:1;">
             <label>Inspection Location</label>
-            <input type="text" id="fillInspectionLocation" placeholder="Enter location">
+            <input type="text" id="fillInspectionLocation" maxlength="60" placeholder="Enter location">
           </div>
         </div>
         <div class="form-row">
@@ -244,11 +251,14 @@
           </div>
           <div style="flex:1;">
             <label>Inspection Conducted By</label>
-            <input type="text" id="fillInspectionConductedBy" placeholder="Your name">
+            <input type="text" id="fillInspectionConductedBy" maxlength="40" placeholder="Your name">
           </div>
         </div>
         <label>Overall Remarks</label>
-        <textarea id="fillOverallRemarks" rows="3" placeholder="Enter overall remarks..."></textarea>
+        <textarea id="fillOverallRemarks" rows="3" maxlength="180" placeholder="Enter overall remarks..."></textarea>
+
+        <label style="margin-top: 12px;">Note</label>
+        <textarea id="fillNote" rows="2" maxlength="120" placeholder="Enter note for PDF export..."></textarea>
       </div>
 
       <div class="progress-text" id="progressText">0% Complete (0/0)</div>
@@ -256,6 +266,7 @@
         <div class="progress-fill" id="progressFill" style="width: 0%"></div>
       </div>
 
+      <div class="fill-section-label" style="margin-top:18px;">Checklist Items to Fill Out</div>
       <div id="fillItemsList" class="fill-items-list"></div>
     </section>
 

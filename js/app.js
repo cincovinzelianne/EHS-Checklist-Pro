@@ -289,26 +289,54 @@ const App = (() => {
       return;
     }
     empty.hidden = true;
-    list.innerHTML = currentBuilderItems.map((item, idx) => `
-      <div class="item-row" data-idx="${idx}">
-        <div class="item-num">${idx + 1}</div>
-        <div class="item-fields">
-          <input type="text" class="item-text-input" placeholder="Checklist item text..." value="${escapeHtml(item.text)}">
-          <select class="item-type-select">
-            <option value="yesno" ${item.type === "yesno" ? "selected" : ""}>Yes / No</option>
-            <option value="text" ${item.type === "text" ? "selected" : ""}>Text Response</option>
-          </select>
+    let itemNumber = 1;
+    list.innerHTML = currentBuilderItems.map((item, idx) => {
+      if (item.type === "section") {
+        return `
+          <div class="item-row section-row" data-idx="${idx}">
+            <div class="item-num">S</div>
+            <div class="item-fields">
+              <input type="text" class="item-text-input" maxlength="40" placeholder="Section title..." value="${escapeHtml(item.text)}">
+              <select class="item-type-select">
+                <option value="section" selected>Section</option>
+              </select>
+            </div>
+            <div class="item-controls">
+              <button class="btn-icon" data-action="up" title="Move up">↑</button>
+              <button class="btn-icon" data-action="down" title="Move down">↓</button>
+              <button class="btn-icon" data-action="remove" title="Remove">✕</button>
+            </div>
+          </div>
+        `;
+      }
+      const html = `
+        <div class="item-row" data-idx="${idx}">
+          <div class="item-num">${itemNumber}</div>
+          <div class="item-fields">
+            <input type="text" class="item-text-input" maxlength="80" placeholder="Checklist item text..." value="${escapeHtml(item.text)}">
+            <select class="item-type-select">
+              <option value="yesno" ${item.type === "yesno" ? "selected" : ""}>Yes / No</option>
+              <option value="text" ${item.type === "text" ? "selected" : ""}>Text Response</option>
+            </select>
+          </div>
+          <div class="item-controls">
+            <button class="btn-icon" data-action="up" title="Move up">↑</button>
+            <button class="btn-icon" data-action="down" title="Move down">↓</button>
+            <button class="btn-icon" data-action="remove" title="Remove">✕</button>
+          </div>
         </div>
-        <div class="item-controls">
-          <button class="btn-icon" data-action="up" title="Move up">↑</button>
-          <button class="btn-icon" data-action="down" title="Move down">↓</button>
-          <button class="btn-icon" data-action="remove" title="Remove">✕</button>
-        </div>
-      </div>
-    `).join("");
+      `;
+      itemNumber += 1;
+      return html;
+    }).join("");
   }
 
   function bindBuilderEvents() {
+    document.getElementById("btnAddSection").addEventListener("click", () => {
+      currentBuilderItems.push({ id: Storage.uid("item"), text: "", type: "section" });
+      renderBuilderItems();
+    });
+
     document.getElementById("btnAddItem").addEventListener("click", () => {
       currentBuilderItems.push({ id: Storage.uid("item"), text: "", type: "yesno" });
       renderBuilderItems();
@@ -347,7 +375,7 @@ const App = (() => {
       if (!name) { showToast("Please enter a template name!"); return; }
       const cleanedItems = currentBuilderItems
         .map(i => ({ ...i, text: (i.text || "").trim() }))
-        .filter(i => i.text.length > 0);
+        .filter(i => i.text.length > 0 && (i.type === "section" || i.type === "yesno" || i.type === "text"));
       if (cleanedItems.length === 0) { showToast("Add at least one checklist item!"); return; }
 
       const template = {
@@ -390,10 +418,15 @@ const App = (() => {
     if (!t) return;
     currentFillTemplateId = templateId;
     currentFillAnswers = {};
+    let activeSection = "";
     t.items.forEach(item => {
+      if (item.type === "section") {
+        activeSection = item.text;
+        return;
+      }
       currentFillAnswers[item.id] = item.type === "yesno"
-        ? { type: "yesno", itemId: item.id, value: null, remarks: "" }
-        : { type: "text", itemId: item.id, value: "", remarks: "" };
+        ? { type: "yesno", itemId: item.id, section: activeSection, value: null, remarks: "" }
+        : { type: "text", itemId: item.id, section: activeSection, value: "", remarks: "" };
     });
 
     document.getElementById("fillTitle").textContent = t.name;
@@ -409,6 +442,7 @@ const App = (() => {
     document.getElementById("fillInspectionDate").value = new Date().toISOString().split("T")[0];
     document.getElementById("fillInspectionConductedBy").value = "";
     document.getElementById("fillOverallRemarks").value = "";
+    document.getElementById("fillNote").value = "";
 
     renderFillItems(t);
     updateProgress();
@@ -417,7 +451,14 @@ const App = (() => {
 
   function renderFillItems(template) {
     const list = document.getElementById("fillItemsList");
+    let activeSection = "";
     list.innerHTML = template.items.map((item) => {
+      if (item.type === "section") {
+        activeSection = item.text;
+        return `
+          <div class="fill-section-title">${escapeHtml(item.text)}</div>
+        `;
+      }
       if (item.type === "yesno") {
         return `
           <div class="fill-item" data-item-id="${item.id}">
@@ -429,7 +470,7 @@ const App = (() => {
               </div>
               <div style="flex:1;">
                 <label style="font-size:12px; color: #64748b;">Remarks</label>
-                <textarea class="fill-item-remarks" rows="1" placeholder="Enter remarks..."></textarea>
+                <textarea class="fill-item-remarks" rows="1" maxlength="120" placeholder="Enter remarks..."></textarea>
               </div>
             </div>
           </div>
@@ -439,7 +480,7 @@ const App = (() => {
           <div class="fill-item" data-item-id="${item.id}">
             <div class="fill-item-text">${escapeHtml(item.text)}</div>
             <div style="flex:1;">
-              <textarea rows="2" placeholder="Type your response..."></textarea>
+              <textarea rows="2" maxlength="120" placeholder="Type your response..."></textarea>
             </div>
           </div>
         `;
@@ -505,6 +546,7 @@ const App = (() => {
         inspectionDate: document.getElementById("fillInspectionDate").value,
         inspectionConductedBy: document.getElementById("fillInspectionConductedBy").value.trim(),
         overallRemarks: document.getElementById("fillOverallRemarks").value.trim(),
+        note: document.getElementById("fillNote").value.trim(),
         answers: Object.values(currentFillAnswers)
       };
       Storage.saveRecord(record);

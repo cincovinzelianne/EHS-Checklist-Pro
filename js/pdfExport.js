@@ -1,260 +1,265 @@
-/* pdfExport.js — builds a formal audit checklist PDF exactly matching user's image format */
+/* pdfExport.js — exports the created template as a printable PDF */
 
 const PdfExport = (() => {
+  function formatText(value) {
+    if (value === null || value === undefined) return "";
+    return String(value).trim();
+  }
 
-  function createPdfDocument(record, template) {
+  function fitTextToWidth(doc, text, maxWidth) {
+    const cleanText = formatText(text);
+    if (!cleanText) return "";
+    if (doc.getTextWidth(cleanText) <= maxWidth) return cleanText;
+
+    const ellipsis = "...";
+    let low = 0;
+    let high = cleanText.length;
+    while (low < high) {
+      const mid = Math.ceil((low + high) / 2);
+      const candidate = cleanText.slice(0, mid).trimEnd() + ellipsis;
+      if (doc.getTextWidth(candidate) <= maxWidth) low = mid;
+      else high = mid - 1;
+    }
+    return cleanText.slice(0, low).trimEnd() + ellipsis;
+  }
+
+  function drawCheckmark(doc, x, y, size) {
+    doc.setLineWidth(1.2);
+    doc.line(x + 3, y + size * 0.55, x + size * 0.42, y + size - 3);
+    doc.line(x + size * 0.42, y + size - 3, x + size - 3, y + 3);
+    doc.setLineWidth(0.5);
+  }
+
+  function drawCheckbox(doc, x, y, size, checked) {
+    doc.rect(x, y, size, size);
+    if (checked) drawCheckmark(doc, x, y, size);
+  }
+
+  function drawHeaderCell(doc, x, y, width, height, label, value) {
+    doc.rect(x, y, width, height);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.text(label, x + 4, y + 8);
+    const cleanValue = formatText(value);
+    if (cleanValue) {
+      doc.setFontSize(8.5);
+      doc.text(fitTextToWidth(doc, cleanValue, width - 8), x + 4, y + 18);
+    }
+  }
+
+  function renderTemplateDocument(record, template) {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ 
-      unit: "pt", 
-      format: "a4",
-      compress: false,
-      precision: 16
-    });
+    const doc = new jsPDF({ unit: "pt", format: "a4", compress: false, precision: 16 });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    
-    const marginLeft = 50;
-    const marginRight = 50;
-    const marginTop = 40;
-    const marginBottom = 40;
-    const contentWidth = pageWidth - marginLeft - marginRight;
-    
-    let y = marginTop;
+    const left = 46;
+    const top = 44;
+    const width = pageWidth - left * 2;
+    const colNoW = 28;
+    const colItemW = 242;
+    const colYesW = 28;
+    const colNoW2 = 28;
+    const colRemarkW = width - colNoW - colItemW - colYesW - colNoW2;
+    const colNoX = left;
+    const colItemX = colNoX + colNoW;
+    const colYesX = colItemX + colItemW;
+    const colNo2X = colYesX + colYesW;
+    const colRemarkX = colNo2X + colNoW2;
+    let y = top;
 
-    doc.setFont("helvetica");
+    const answersByItemId = new Map((Array.isArray(record.answers) ? record.answers : []).map(answer => [answer.itemId, answer]));
+    const items = Array.isArray(template.items) ? template.items : [];
 
-    // Header - Main Title
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(0, 0, 0);
-    const titleText = "EHS EQUIPMENT/LINE RELEASE CHECKLIST";
-    const titleWidth = doc.getTextWidth(titleText);
-    doc.text(titleText, (pageWidth - titleWidth) / 2, y);
-    y += 40;
-
-    // Top checkboxes section
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-
-    const checkboxSize = 12;
-
-    // Row 1
-    let label1X = marginLeft;
-    doc.text("New Product Process", label1X, y);
-    let cb1X = label1X + doc.getTextWidth("New Product Process") + 10;
-    doc.rect(cb1X, y - 9, checkboxSize, checkboxSize);
-    if (record.newProductProcess) {
-      doc.setLineWidth(2);
-      doc.line(cb1X + 3, y - 2, cb1X + 5, y - 5);
-      doc.line(cb1X + 5, y - 5, cb1X + 9, y - 11);
-      doc.setLineWidth(0.5);
-    }
-
-    let label2X = marginLeft + (contentWidth / 2);
-    doc.text("Product Process Change", label2X, y);
-    let cb2X = label2X + doc.getTextWidth("Product Process Change") + 10;
-    doc.rect(cb2X, y - 9, checkboxSize, checkboxSize);
-    if (record.productProcessChange) {
-      doc.setLineWidth(2);
-      doc.line(cb2X + 3, y - 2, cb2X + 5, y - 5);
-      doc.line(cb2X + 5, y - 5, cb2X + 9, y - 11);
-      doc.setLineWidth(0.5);
-    }
-    y += 30;
-
-    // Row 2
-    let label3X = marginLeft;
-    doc.text("New Equipment/Future", label3X, y);
-    let cb3X = label3X + doc.getTextWidth("New Equipment/Future") + 10;
-    doc.rect(cb3X, y - 9, checkboxSize, checkboxSize);
-    if (record.newEquipmentFuture) {
-      doc.setLineWidth(2);
-      doc.line(cb3X + 3, y - 2, cb3X + 5, y - 5);
-      doc.line(cb3X + 5, y - 5, cb3X + 9, y - 11);
-      doc.setLineWidth(0.5);
-    }
-
-    let label4X = marginLeft + (contentWidth / 2);
-    doc.text("Equipment Modification", label4X, y);
-    let cb4X = label4X + doc.getTextWidth("Equipment Modification") + 10;
-    doc.rect(cb4X, y - 9, checkboxSize, checkboxSize);
-    if (record.equipmentModification) {
-      doc.setLineWidth(2);
-      doc.line(cb4X + 3, y - 2, cb4X + 5, y - 5);
-      doc.line(cb4X + 5, y - 5, cb4X + 9, y - 11);
-      doc.setLineWidth(0.5);
-    }
-    y += 35;
-
-    // Fields table
-    const fieldHeight = 25;
-    const fieldLabelWidth = 140;
-    const fieldValueWidth = 200;
-
-    function drawField(label, value, startX, startY) {
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(11);
-      doc.text(label + ":", startX, startY);
+    function drawPageHeader() {
       doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(0.5);
-      const fieldX = startX + fieldLabelWidth - 5;
-      doc.rect(fieldX, startY - 15, fieldValueWidth, fieldHeight);
-      doc.text(value || "", fieldX + 10, startY);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont("helvetica", "normal");
+
+      doc.setLineWidth(0.75);
+      doc.rect(left, y, width, 28);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.text(formatText(template.name || "EHS EQUIPMENT/LINE RELEASE CHECKLIST"), pageWidth / 2, y + 18, { align: "center" });
+      y += 28;
+
+      const halfWidth = width / 2;
+      const checkboxRowHeight = 22;
+      const checkboxSize = 10;
+      const checkboxRows = [
+        [
+          ["New Product Process", record.newProductProcess],
+          ["Product Process Change", record.productProcessChange]
+        ],
+        [
+          ["New Equipment/Fixture", record.newEquipmentFuture],
+          ["Equipment/Fixture Modification", record.equipmentModification]
+        ]
+      ];
+
+      checkboxRows.forEach((row) => {
+        doc.rect(left, y, width, checkboxRowHeight);
+        doc.line(left + halfWidth, y, left + halfWidth, y + checkboxRowHeight);
+        row.forEach((cell, cellIndex) => {
+          const cellX = left + (halfWidth * cellIndex);
+          const label = cell[0];
+          const checked = Boolean(cell[1]);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(8);
+          doc.text(label, cellX + 4, y + 14);
+          drawCheckbox(doc, cellX + halfWidth - 22, y + 6, checkboxSize, checked);
+        });
+        y += checkboxRowHeight;
+      });
+
+      const fieldRowHeight = 26;
+      const fieldRows = [
+        [["Equipment/Line No.", record.equipmentLineNo], ["Equipment OEM Contact:", record.equipmentOemContact]],
+        [["Product/Process Name:", record.productProcessName], ["Equipment/Line Location:", record.inspectionLocation]],
+        [["Inspection Date:", record.inspectionDate], ["Inspection Conducted by:", record.inspectionConductedBy]]
+      ];
+
+      fieldRows.forEach((row) => {
+        doc.rect(left, y, width, fieldRowHeight);
+        doc.line(left + halfWidth, y, left + halfWidth, y + fieldRowHeight);
+
+        row.forEach((cell, cellIndex) => {
+          const cellX = left + (halfWidth * cellIndex);
+          const label = cell[0];
+          const value = formatText(cell[1]);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7.5);
+          doc.text(label, cellX + 4, y + 9);
+          const boxX = cellX + 96;
+          doc.rect(boxX, y + 3, halfWidth - 100, 20);
+          if (value) {
+            doc.setFontSize(8.2);
+            doc.text(fitTextToWidth(doc, value, halfWidth - 108), boxX + 4, y + 17);
+          }
+        });
+        y += fieldRowHeight;
+      });
+
+        const headerHeight = 36;
+        const statusTopHeight = 18;
+        doc.setFillColor(192, 192, 192);
+        doc.rect(left, y, width, headerHeight, "F");
+        doc.rect(left, y, width, headerHeight);
+        doc.line(colItemX, y, colItemX, y + headerHeight);
+        doc.line(colRemarkX, y, colRemarkX, y + headerHeight);
+        doc.line(colYesX, y, colYesX, y + headerHeight);
+        doc.line(colNo2X, y + statusTopHeight, colNo2X, y + headerHeight);
+        doc.line(colYesX, y + statusTopHeight, colNo2X + colNoW2, y + statusTopHeight);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.text("No.", colNoX + colNoW / 2, y + 23, { align: "center" });
+        doc.text("Check Items", colItemX + colItemW / 2, y + 23, { align: "center" });
+        doc.text("STATUS", colYesX + (colYesW + colNoW2) / 2, y + 8, { align: "center" });
+        doc.text("Yes", colYesX + colYesW / 2, y + 30, { align: "center" });
+        doc.text("No", colNo2X + colNoW2 / 2, y + 30, { align: "center" });
+        doc.text("Remarks", colRemarkX + colRemarkW / 2, y + 23, { align: "center" });
+        y += headerHeight;
     }
 
-    // Row 1
-    drawField("Equipment/Line No.", record.equipmentLineNo || "", marginLeft, y);
-    drawField("Equipment OEM Contact", record.equipmentOemContact || "", marginLeft + fieldLabelWidth + fieldValueWidth + 40, y);
-    y += fieldHeight + 15;
+    drawPageHeader();
 
-    // Row 2
-    drawField("Product/Process Name", record.productProcessName || "", marginLeft, y);
-    drawField("Inspection Location", record.inspectionLocation || "", marginLeft + fieldLabelWidth + fieldValueWidth + 40, y);
-    y += fieldHeight + 15;
-
-    // Row3
-    drawField("Inspection Date", record.inspectionDate || "", marginLeft, y);
-    drawField("Inspection Conducted By", record.inspectionConductedBy || "", marginLeft + fieldLabelWidth + fieldValueWidth + 40, y);
-    y += fieldHeight + 40;
-
-    // Checklist items header
-    const colNoX = marginLeft + 10;
-    const colCheckX = marginLeft + 60;
-    const colYesX = marginLeft + contentWidth - 140;
-    const colNo2X = marginLeft + contentWidth - 80;
-    const colRemarksX = colNo2X + 50;
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.setFillColor(192, 192, 192);
-    doc.rect(marginLeft - 2, y - 15, contentWidth + 4, 25, "F");
-    doc.setTextColor(0, 0, 0);
-    doc.text("No.", colNoX, y);
-    doc.text("Check Items", colCheckX, y);
-    doc.text("STATUS", (colYesX + colNo2X) / 2 - 20, y);
-    doc.text("Yes", colYesX + 5, y);
-    doc.text("No", colNo2X + 5, y);
-    doc.text("Remarks", colRemarksX, y);
-    y += 30;
-
-    // Draw checklist items
-    let currentSection = null;
     let itemNumber = 0;
+    items.forEach((item) => {
+      if (item.type === "section") {
+        const sectionText = formatText(item.text) || " ";
+        const sectionHeight = 16;
 
-    record.answers.forEach((answer, idx) => {
-      const item = template.items.find(i => i.id === answer.itemId) || { text: "(Deleted item)" };
-
-      // Check if item is a section header
-      if (item.text.toUpperCase() === item.text && item.text.length > 5 && !item.text.includes(".")) {
-        if (y + 30 > pageHeight - marginBottom - 80) {
+        if (y + sectionHeight + 46 > pageHeight - 20) {
           doc.addPage();
-          y = marginTop + 20;
-          doc.setFont("helvetica", "bold");
-          doc.setFontSize(16);
-          const titleText = "EHS EQUIPMENT/LINE RELEASE CHECKLIST";
-          const titleWidth = doc.getTextWidth(titleText);
-          doc.text(titleText, (pageWidth - titleWidth) / 2, y);
-          y += 55;
-          doc.setFontSize(11);
-          doc.setFillColor(192, 192, 192);
-          doc.rect(marginLeft - 2, y - 15, contentWidth + 4, 25, "F");
-          doc.text("No.", colNoX, y);
-          doc.text("Check Items", colCheckX, y);
-          doc.text("STATUS", (colYesX + colNo2X) / 2 - 20, y);
-          doc.text("Yes", colYesX + 5, y);
-          doc.text("No", colNo2X + 5, y);
-          doc.text("Remarks", colRemarksX, y);
-          y += 30;
+          y = top;
+          drawPageHeader();
         }
-        currentSection = item.text;
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(11);
+
         doc.setFillColor(217, 217, 217);
-        doc.rect(marginLeft - 2, y - 15, contentWidth + 4, 25, "F");
-        doc.text(currentSection, colCheckX, y);
-        y += 30;
+        doc.rect(left, y, width, sectionHeight, "F");
+        doc.rect(left, y, width, sectionHeight);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.5);
+        doc.text(fitTextToWidth(doc, sectionText, width - 8), colItemX + 4, y + 11);
+        y += sectionHeight;
         return;
       }
 
-      itemNumber++;
-      const itemText = item.text;
-      const itemLines = doc.splitTextToSize(itemText, colYesX - colCheckX - 15);
-      const blockHeight = Math.max(itemLines.length * 14, 25);
+      const answer = answersByItemId.get(item.id) || {};
+      const itemText = formatText(item.text) || " ";
+      const itemLines = doc.splitTextToSize(itemText, colItemW - 8);
+      const rowHeight = Math.max(18, itemLines.length * 8 + 6);
 
-      if (y + blockHeight + 20 > pageHeight - marginBottom - 80) {
+      if (y + rowHeight + 46 > pageHeight - 20) {
         doc.addPage();
-        y = marginTop + 20;
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(16);
-        const titleText = "EHS EQUIPMENT/LINE RELEASE CHECKLIST";
-        const titleWidth = doc.getTextWidth(titleText);
-        doc.text(titleText, (pageWidth - titleWidth) / 2, y);
-        y += 55;
-        doc.setFontSize(11);
-        doc.setFillColor(192, 192, 192);
-        doc.rect(marginLeft - 2, y - 15, contentWidth + 4, 25, "F");
-        doc.text("No.", colNoX, y);
-        doc.text("Check Items", colCheckX, y);
-        doc.text("STATUS", (colYesX + colNo2X) / 2 - 20, y);
-        doc.text("Yes", colYesX + 5, y);
-        doc.text("No", colNo2X + 5, y);
-        doc.text("Remarks", colRemarksX, y);
-        y += 30;
+        y = top;
+        drawPageHeader();
       }
+
+      doc.rect(left, y, width, rowHeight);
+      doc.line(colItemX, y, colItemX, y + rowHeight);
+      doc.line(colYesX, y, colYesX, y + rowHeight);
+      doc.line(colNo2X, y, colNo2X, y + rowHeight);
+      doc.line(colRemarkX, y, colRemarkX, y + rowHeight);
+
+      itemNumber += 1;
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(11);
-      doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(0.5);
-      doc.rect(marginLeft - 2, y - 15, contentWidth + 4, blockHeight + 15);
+      doc.setFontSize(7);
+      doc.text(String(itemNumber), colNoX + colNoW / 2, y + 10, { align: "center" });
+      doc.text(fitTextToWidth(doc, itemText, colItemW - 8), colItemX + 4, y + 9);
 
-      doc.text(String(itemNumber), colNoX, y);
-      doc.text(itemLines, colCheckX, y);
+      const boxSize = 9;
+      const yesBoxX = colYesX + (colYesW - boxSize) / 2;
+      const noBoxX = colNo2X + (colNoW2 - boxSize) / 2;
+      drawCheckbox(doc, yesBoxX, y + 4, boxSize, answer.value === "yes");
+      drawCheckbox(doc, noBoxX, y + 4, boxSize, answer.value === "no");
 
-      const boxSize = 14;
-      doc.rect(colYesX, y - 11, boxSize, boxSize);
-      if (answer.value === "yes") {
-        doc.setLineWidth(2);
-        doc.line(colYesX + 3, y - 5, colYesX + 5, y - 7);
-        doc.line(colYesX + 5, y - 7, colYesX + 11, y - 13);
-        doc.setLineWidth(0.5);
+      if (formatText(answer.remarks)) {
+        doc.setFontSize(6.6);
+        doc.text(fitTextToWidth(doc, answer.remarks, colRemarkW - 8), colRemarkX + 4, y + 9);
       }
 
-      doc.rect(colNo2X, y - 11, boxSize, boxSize);
-      if (answer.value === "no") {
-        doc.setLineWidth(2);
-        doc.line(colNo2X + 4, y - 9, colNo2X + 10, y - 3);
-        doc.line(colNo2X + 10, y - 9, colNo2X + 4, y - 3);
-        doc.setLineWidth(0.5);
-      }
-
-      if (answer.remarks) {
-        const remarksLines = doc.splitTextToSize(answer.remarks, contentWidth - colRemarksX + marginLeft);
-        doc.text(remarksLines, colRemarksX, y);
-      }
-
-      y += blockHeight + 15;
+      y += rowHeight;
     });
 
-    // Overall Remarks
-    if (y + 80 > pageHeight - marginBottom - 40) {
+    const remarksHeight = 34;
+    const noteHeight = 26;
+    if (y + remarksHeight + noteHeight > pageHeight - 20) {
       doc.addPage();
-      y = marginTop + 20;
+      y = top;
     }
+
+    doc.rect(left, y, width, remarksHeight);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text("Overall Remarks", marginLeft, y);
-    y += 25;
-    doc.setFont("helvetica", "normal");
-    if (record.overallRemarks) {
-      const remarksLines = doc.splitTextToSize(record.overallRemarks, contentWidth);
-      doc.text(remarksLines, marginLeft + 10, y);
+    doc.setFontSize(8);
+    doc.text("Overall Remarks:", left + 4, y + 11);
+    const overallText = formatText(record.overallRemarks || template.customFooter || "");
+    if (overallText) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.2);
+      doc.text(fitTextToWidth(doc, overallText, width - 10), left + 4, y + 21);
     }
-    doc.setDrawColor(0,0,0);
-    doc.setLineWidth(0.5);
-    doc.rect(marginLeft-2, y -15, contentWidth+4, 80);
+    y += remarksHeight;
+
+    doc.rect(left, y, width, noteHeight);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("Note:", left + 4, y + 11);
+    const noteText = formatText(record.note || "");
+    if (noteText) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.2);
+      doc.text(fitTextToWidth(doc, noteText, width - 10), left + 4, y + 21);
+    }
 
     return doc;
+  }
+
+  function createPdfDocument(record, template) {
+    if (!template || !Array.isArray(template.items)) {
+      throw new Error("Template not found or invalid.");
+    }
+    return renderTemplateDocument(record, template);
   }
 
   function exportRecord(record, template) {
@@ -265,7 +270,7 @@ const PdfExport = (() => {
 
   function getPdfBlob(record, template) {
     const doc = createPdfDocument(record, template);
-    return doc.output('blob');
+    return doc.output("blob");
   }
 
   return { exportRecord, getPdfBlob };
