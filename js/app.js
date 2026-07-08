@@ -35,15 +35,35 @@ const App = (() => {
     const email = document.getElementById("loginEmail").value.trim();
     const password = document.getElementById("loginPassword").value;
     const errorEl = document.getElementById("loginError");
+    const loginBtn = document.getElementById("btnLogin");
+    const btnText = loginBtn.querySelector(".login-btn-text");
+    const btnLoader = loginBtn.querySelector(".login-btn-loader");
 
-    if (email === VALID_CREDENTIALS.email && password === VALID_CREDENTIALS.password) {
-      localStorage.setItem("checklisthub_auth", "true");
-      errorEl.hidden = true;
-      showToast("Welcome back!");
-      showMainApp();
-    } else {
-      errorEl.hidden = false;
-    }
+    // Show loading state
+    loginBtn.disabled = true;
+    btnText.hidden = true;
+    btnLoader.hidden = false;
+    errorEl.hidden = true;
+
+    // Simulate login delay for UX
+    setTimeout(() => {
+      if (email === VALID_CREDENTIALS.email && password === VALID_CREDENTIALS.password) {
+        localStorage.setItem("checklisthub_auth", "true");
+        errorEl.hidden = true;
+        showToast("Welcome back!");
+        showMainApp();
+        
+        // Reset button state
+        loginBtn.disabled = false;
+        btnText.hidden = false;
+        btnLoader.hidden = true;
+      } else {
+        loginBtn.disabled = false;
+        btnText.hidden = false;
+        btnLoader.hidden = true;
+        errorEl.hidden = false;
+      }
+    }, 800);
   }
 
   function handleLogout() {
@@ -52,6 +72,7 @@ const App = (() => {
     showLoginPage();
     document.getElementById("loginEmail").value = "";
     document.getElementById("loginPassword").value = "";
+    document.getElementById("loginError").hidden = true;
   }
 
   // ---------- Utilities ----------
@@ -138,9 +159,14 @@ const App = (() => {
   }
 
   function updateThemeButton() {
-    const btn = document.getElementById("themeToggle");
     const isDark = document.body.classList.contains("dark");
-    btn.textContent = isDark ? "☀️ Light Mode" : "🌙 Dark Mode";
+    const label = document.querySelector(".theme-label");
+    const iconDark = document.querySelector(".theme-icon-dark");
+    const iconLight = document.querySelector(".theme-icon-light");
+
+    if (label) label.textContent = isDark ? "Light Mode" : "Dark Mode";
+    if (iconDark) iconDark.style.display = isDark ? "none" : "block";
+    if (iconLight) iconLight.style.display = isDark ? "block" : "none";
   }
 
   // ---------- Dashboard ----------
@@ -938,6 +964,21 @@ const App = (() => {
       });
     });
 
+    // Dashboard quick actions
+    document.getElementById("quickAddTemplate").addEventListener("click", () => {
+      openBuilderView();
+    });
+
+    document.getElementById("quickFillChecklist").addEventListener("click", () => {
+      renderTemplates();
+      showView("view-templates");
+    });
+
+    document.getElementById("btnViewAllRecords").addEventListener("click", () => {
+      renderRecords();
+      showView("view-records");
+    });
+
     document.getElementById("templateSearch").addEventListener("input", (e) => {
       renderTemplates(e.target.value, document.getElementById("categoryFilter").value);
     });
@@ -960,6 +1001,24 @@ const App = (() => {
   function bindAuthEvents() {
     document.getElementById("btnLogin").addEventListener("click", handleLogin);
     document.getElementById("btnLogout").addEventListener("click", handleLogout);
+    
+    // Password toggle
+    const togglePasswordBtn = document.getElementById("togglePassword");
+    const loginPasswordInput = document.getElementById("loginPassword");
+    const passwordVisibleIcon = document.getElementById("password-visible");
+    const passwordHiddenIcon = document.getElementById("password-hidden");
+
+    togglePasswordBtn.addEventListener("click", () => {
+      if (loginPasswordInput.type === "password") {
+        loginPasswordInput.type = "text";
+        passwordVisibleIcon.style.display = "none";
+        passwordHiddenIcon.style.display = "block";
+      } else {
+        loginPasswordInput.type = "password";
+        passwordVisibleIcon.style.display = "block";
+        passwordHiddenIcon.style.display = "none";
+      }
+    });
     
     // Allow login on enter key
     document.getElementById("loginPassword").addEventListener("keypress", (e) => {
